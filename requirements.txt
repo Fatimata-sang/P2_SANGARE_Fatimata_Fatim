@@ -3,8 +3,3 @@ pandas
 lxml
 bs4
 html5lib
-#rich
-#regex
-#pytest
-#coverage
-#pytest-cov
