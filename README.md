@@ -5,7 +5,7 @@ Ce programme :
 
 1. Scrape des informations de toutes les pages des diffrentes categories du site https://books.toscrape.com/ avec Beautifulsoup 
 2. Sauvegarde des informations dans des fichiers CSV 
-3. Télécharger et enregistrer le fichier image de chaque page Produit
+3. Télécharge et enregistre les images de chaque page Produit
 
 ## Installation
 
