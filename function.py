@@ -1,7 +1,9 @@
 # function.py
+import requests
+from bs4 import BeautifulSoup
 import re
-
-
+import shutil
+import os
 ####################################
 # extraction infos table function
 ####################################
@@ -30,3 +32,43 @@ def extract_value(balise):
         except:
             return "Nothing_found"
     return col_val
+
+def cut_string(stri, n):
+    title_for_link = re.sub(r"[^-azA-Z0-9 ]", "", stri)  # remove all special character
+    if len(stri) > n:
+        short_title = title_for_link[0:n]  # cut after n character if it's too long
+    else:
+        short_title = title_for_link
+    return short_title
+
+
+def get_info(produits, url_base, images_folder):
+    cols = []  # liste pour enregistrer les infos
+    for produit in produits:
+        # requete pour scraper chaque produit
+        id_produit = produit.find('a', href=True)['href'].split("/")[3]
+        url = url_base + "catalogue/" + id_produit + "/index.html"
+        response = requests.get(url)  # requeter le contenu de la page
+        soup = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
+
+        # extraction des informations
+        table = soup.find('table')
+        col_table = extract_value(table)
+        col_table['category'] = soup.find('ul', attrs={"class": "breadcrumb"}).find_all('li')[2].text
+        col_table['description'] = str(soup.select_one('div#product_description ~ p')).replace('<p>', '').replace('</p>', '')
+        col_table['title'] = soup.title.text.strip()
+        img_url = soup.find('img')['src'].replace("../../", url_base)
+        img_name = soup.find('img')['alt'].strip()
+        col_table['image_url'] = img_url
+        col_table['product_page_url'] = url
+        cols.append(col_table)
+        r_img = requests.get(img_url, stream=True)  # Get request on full_url
+        images_folder_link = images_folder
+        if not os.path.exists(images_folder_link):
+            os.mkdir(images_folder_link)
+        nom_images = cut_string(img_name, 20)
+        if r_img.status_code == 200:  # 200 status code = OK
+            with open(images_folder_link + nom_images + '.jpg', 'wb') as f:
+                r_img.raw.decode_content = True
+                shutil.copyfileobj(r_img.raw, f)
+    return cols

@@ -3,76 +3,66 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
-from function import extract_value
+import os
+from function import get_info
 from urllib.parse import urljoin
 
+# création de dossiers
+CSV_PATH = 'CSV/'
+IMAGES_PATH = 'Images/'
+
+if not os.path.exists(CSV_PATH):
+    os.mkdir(CSV_PATH)
+if not os.path.exists(IMAGES_PATH):
+    os.mkdir(IMAGES_PATH)
+
 # requests et scraping avec BeautifulSoup
-url = "https://books.toscrape.com/catalogue/category/books/fiction_10/index.html"
+url_base = "https://books.toscrape.com/"
 
-response = requests.get(url)  # requeter le contenu de la page
+response = requests.get(url_base)  # requeter le contenu de la page
 soup = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
-footer_element = soup.select_one('li.current')
-cols = []  # liste pour enregistrer les infos
+categories = soup.find('ul', attrs={"class": "nav nav-list"}).find('ul').find_all('li')
 
-# recuperer un produit avec pagination ou non
-if footer_element:
-    while True:
-        response2 = requests.get(url)
-        soup2 = BeautifulSoup(response2.content, 'html.parser')
 
-        footer_element = soup2.select_one('li.current')
+# recuperer les pages
+for categorie in categories:
+    url_categorie = url_base + categorie.find('a', href=True)['href']
+    name_categorie = categorie.find('a').text.strip()
+    response = requests.get(url_categorie)  # requeter le contenu de la page
+    #time.sleep(1) # assurer au moins 1 seconde entre les sraping de categories
+    soup_categorie = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
+    footer_element = soup_categorie.select_one('li.current')
+    cols = []  # liste pour enregistrer les infos
+    images_folder_link = IMAGES_PATH + name_categorie + '/'
+    # recuperer un produit avec pagination ou non
+    if footer_element:
+        while True:
+            response2 = requests.get(url_categorie)
+            soup2 = BeautifulSoup(response2.content, 'html.parser')
 
-        # pagination
-        # trouver la page suivante à scraper
-        next_page_element = soup2.select_one('li.next > a')
-        if next_page_element:
-            next_page_url = next_page_element.get('href')
-            url = urljoin(url, next_page_url)
-            produits = soup2.find_all('div', attrs={"class": "image_container"})
-            for produit in produits:
-                # requete pour scraper chaque produit
-                id_produit = produit.find('a', href=True)['href'].split("/")[3]
-                url2 = "http://books.toscrape.com/catalogue/" + id_produit + "/index.html"
-                response3 = requests.get(url2)  # requeter le contenu de la page
-                soup3 = BeautifulSoup(response3.content, 'html.parser')  # scraper les donnees
+            footer_element = soup2.select_one('li.current')
 
-                # extraction des informations
-                table = soup3.find('table')
-                col_table = extract_value(table)
-                col_table['category'] = soup3.find('ul', attrs={"class": "breadcrumb"}).find_all('li')[2].text
-                col_table['description'] = soup3.select_one('div#product_description ~ p').text.strip()
-                col_table['title'] = soup3.title.text.strip()
-                col_table['image_url'] = soup3.find('img')['src'].replace("../../", "http://books.toscrape.com/")
-                col_table['product_page_url'] = url2
-                cols.append(col_table)
-        else:
-            break
+            # pagination
+            # trouver la page suivante à scraper
+            next_page_element = soup2.select_one('li.next > a')
+            if next_page_element:
+                next_page_url = next_page_element.get('href')
+                url_categorie = urljoin(url_categorie, next_page_url)
+                produits = soup2.find_all('div', attrs={"class": "image_container"}) # get all produit
+                cols = get_info(produits, url_base, images_folder_link)
+            else:
+                break
 
-else:
-    produits = soup.find_all('div', attrs={"class": "image_container"})
-    for produit in produits:
-        # requete pour scraper chaque produit
-        id_produit = produit.find('a', href=True)['href'].split("/")[3]
-        url2 = "http://books.toscrape.com/catalogue/" + id_produit + "/index.html"
-        response2 = requests.get(url2)  # requeter le contenu de la page
-        soup2 = BeautifulSoup(response2.content, 'html.parser')  # scraper les donnees
+    else:
+        produits = soup_categorie.find_all('div', attrs={"class": "image_container"}) # get all produit
+        cols = get_info(produits, url_base, images_folder_link) # get info
 
-        # extraction des informations
-        table = soup2.find('table')
-        col_table = extract_value(table)
-        col_table['category'] = soup2.find('ul', attrs={"class": "breadcrumb"}).find_all('li')[2].text
-        col_table['description'] = soup2.select_one('div#product_description ~ p').text.strip()
-        col_table['title'] = soup2.title.text.strip()
-        col_table['image_url'] = soup2.find('img')['src'].replace("../../", "http://books.toscrape.com/")
-        col_table['product_page_url'] = url2
-        cols.append(col_table)
-
-# Enregistrement dans un fichier CSV
-filename = 'categorie.csv'
-with open(filename, 'w', newline='') as f:
-    w = csv.DictWriter(f, ['product_page_url', 'universal_ product_code', 'price_including_tax', 'price_excluding_tax',
-                           'number_available',
-                           'review_rating', 'category', 'description', 'title', 'image_url'])
-    w.writeheader()
-    for col in cols:
-        w.writerow(col)
+    # Enregistrement dans un fichier CSV
+    filename = name_categorie + '.csv'
+    with open(CSV_PATH + filename, 'w', newline='', encoding='utf-8') as f:
+        w = csv.DictWriter(f, ['product_page_url', 'universal_ product_code', 'price_including_tax', 'price_excluding_tax',
+                               'number_available',
+                               'review_rating', 'category', 'description', 'title', 'image_url'])
+        w.writeheader()
+        for col in cols:
+            w.writerow(col)

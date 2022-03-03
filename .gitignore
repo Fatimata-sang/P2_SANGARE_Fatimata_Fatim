@@ -5,3 +5,7 @@ test3.py
 function1.py
 .idea
 __pycache__
+CSV/
+Images/
+.xlsx
+test4.py
