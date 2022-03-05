@@ -11,8 +11,29 @@ Ce programme :
 
 Ce projet est codé avec Python@3.9.4
 
+Créer un environnement virtuel (optionnel)
+
+```
+python3 -m venv /path/virtual/environment
+```
+
+Cloner le projet
+
+```
+git clone https://github.com/Fatimata-sang/P2_SANGARE_Fatimata_Fatim.git
+```
+
 Installation de toutes les ddépendance avec `pip`
 
 ```
 pip install -r requirements.txt
+```
+
+
+## Usage
+
+Après les actions ci-dessus, exécutez simplement main.py
+
+```
+python3 main.py
 ```
