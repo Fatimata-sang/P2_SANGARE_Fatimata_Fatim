@@ -6,6 +6,7 @@ import csv
 import os
 from function import get_info
 from urllib.parse import urljoin
+import time
 
 # création de dossiers
 CSV_PATH = 'CSV/'
@@ -29,7 +30,7 @@ for categorie in categories:
     url_categorie = url_base + categorie.find('a', href=True)['href']
     name_categorie = categorie.find('a').text.strip()
     response = requests.get(url_categorie)  # requeter le contenu de la page
-    #time.sleep(1) # assurer au moins 1 seconde entre les sraping de categories
+    time.sleep(1) # assurer au moins 1 seconde entre les sraping de categories
     soup_categorie = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
     footer_element = soup_categorie.select_one('li.current')
     cols = []  # liste pour enregistrer les infos
@@ -62,7 +63,7 @@ for categorie in categories:
     with open(CSV_PATH + filename, 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, ['product_page_url', 'universal_ product_code', 'price_including_tax', 'price_excluding_tax',
                                'number_available',
-                               'review_rating', 'category', 'description', 'title', 'image_url'])
+                               'review_rating', 'product_type', 'category', 'description', 'title', 'image_url'])
         w.writeheader()
         for col in cols:
             w.writerow(col)

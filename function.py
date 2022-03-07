@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import shutil
 import os
+import time
 ####################################
 # extraction infos table function
 ####################################
@@ -26,9 +27,9 @@ def extract_value(balise):
             elif re.search(r"Number of reviews", tr.find('th').text):
                 target = tr.find('td')
                 col_val['review_rating'] = str(target.text.strip())
-            # elif re.search(r"Product Type", tr.find('th').text):
-            #    target = tr.find('td')
-            #    col_val['category'] = str(target.text.strip())
+            elif re.search(r"Product Type", tr.find('th').text):
+                target = tr.find('td')
+                col_val['product_type'] = str(target.text.strip())
         except:
             return "Nothing_found"
     return col_val
@@ -45,6 +46,7 @@ def cut_string(stri, n):
 def get_info(produits, url_base, images_folder):
     cols = []  # liste pour enregistrer les infos
     for produit in produits:
+        time.sleep(1)  # assurer au moins 1 seconde entre les sraping de produit
         # requete pour scraper chaque produit
         id_produit = produit.find('a', href=True)['href'].split("/")[3]
         url = url_base + "catalogue/" + id_produit + "/index.html"
