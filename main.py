@@ -20,7 +20,7 @@ if not os.path.exists(IMAGES_PATH):
 # requests et scraping avec BeautifulSoup
 url_base = "https://books.toscrape.com/"
 
-response = requests.get(url_base)  # requeter le contenu de la page
+response = requests.get(url_base, timeout=10)  # requeter le contenu de la page
 soup = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
 categories = soup.find('ul', attrs={"class": "nav nav-list"}).find('ul').find_all('li')
 
@@ -29,7 +29,7 @@ categories = soup.find('ul', attrs={"class": "nav nav-list"}).find('ul').find_al
 for categorie in categories:
     url_categorie = url_base + categorie.find('a', href=True)['href']
     name_categorie = categorie.find('a').text.strip()
-    response = requests.get(url_categorie)  # requeter le contenu de la page
+    response = requests.get(url_categorie, timeout=10)  # requeter le contenu de la page
     time.sleep(1) # assurer au moins 1 seconde entre les sraping de categories
     soup_categorie = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
     footer_element = soup_categorie.select_one('li.current')
@@ -38,7 +38,7 @@ for categorie in categories:
     # recuperer un produit avec pagination ou non
     if footer_element:
         while True:
-            response2 = requests.get(url_categorie)
+            response2 = requests.get(url_categorie, timeout=10)
             soup2 = BeautifulSoup(response2.content, 'html.parser')
 
             footer_element = soup2.select_one('li.current')

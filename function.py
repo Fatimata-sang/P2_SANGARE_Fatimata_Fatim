@@ -35,7 +35,7 @@ def extract_value(balise):
     return col_val
 
 def cut_string(stri, n):
-    title_for_link = re.sub(r"[^-azA-Z0-9 ]", "", stri)  # remove all special character
+    title_for_link = re.sub(r"[^A-Za-z0-9]+", "-", stri)  # remove all special character
     if len(stri) > n:
         short_title = title_for_link[0:n]  # cut after n character if it's too long
     else:
@@ -49,16 +49,17 @@ def get_info(produits, url_base, images_folder):
         time.sleep(1)  # assurer au moins 1 seconde entre les sraping de produit
         # requete pour scraper chaque produit
         id_produit = produit.find('a', href=True)['href'].split("/")[3]
+        print("recuperation livre: ",id_produit)
         url = url_base + "catalogue/" + id_produit + "/index.html"
-        response = requests.get(url)  # requeter le contenu de la page
+        response = requests.get(url, timeout=10)  # requeter le contenu de la page
         soup = BeautifulSoup(response.content, 'html.parser')  # scraper les donnees
 
         # extraction des informations
         table = soup.find('table')
         col_table = extract_value(table)
-        col_table['category'] = soup.find('ul', attrs={"class": "breadcrumb"}).find_all('li')[2].text
+        col_table['category'] =soup.find('li', {'class': 'active'}).find_previous('a').text  #soup.find('ul', attrs={"class": "breadcrumb"}).find_all('li')[2].text
         col_table['description'] = str(soup.select_one('div#product_description ~ p')).replace('<p>', '').replace('</p>', '')
-        col_table['title'] = soup.title.text.strip()
+        col_table['title'] =soup.find("li", {"class": "active"}).text  #soup.title.text.strip()
         img_url = soup.find('img')['src'].replace("../../", url_base)
         img_name = soup.find('img')['alt'].strip()
         col_table['image_url'] = img_url
